@@ -22,6 +22,14 @@
 // --------------------------------------------------------------- //
 
 // there are defined all the pins
+
+
+const int cima = 3;
+const int baixo = 4; 
+const int esquerdo= 5; 
+const int direito = 6;   
+
+
 struct Pin {
 	static const short joystickX = A2;   // joystick X axis pin
 	static const short joystickY = A3;   // joystick Y axis pin
@@ -46,6 +54,10 @@ const short initialSnakeLength = 3;
 
 
 void setup() {
+  pinMode(cima, INPUT_PULLUP);
+  pinMode(baixo, INPUT_PULLUP);
+  pinMode(esquerdo, INPUT_PULLUP);
+  pinMode(direito, INPUT_PULLUP);
 	Serial.begin(115200);  // set the same baud rate on your Serial Monitor
 	initialize();         // initialize pins & LED matrix
 	calibrateJoystick(); // calibrate the joystick home (do not touch it)
@@ -147,20 +159,18 @@ void scanJoystick() {
 	long timestamp = millis();
 
 	while (millis() < timestamp + snakeSpeed) {
-		// calculate snake speed exponentially (10...1000ms)
-		float raw = mapf(analogRead(Pin::potentiometer), 0, 1023, 0, 1);
-		snakeSpeed = mapf(pow(raw, 3.5), 0, 1, 10, 1000); // change the speed exponentially
-		if (snakeSpeed == 0) snakeSpeed = 1; // safety: speed can not be 0
+		snakeSpeed = 250; // ajuste conforme necessário
 
-		// determine the direction of the snake
-		analogRead(Pin::joystickY) < joystickHome.y - joystickThreshold ? snakeDirection = up    : 0;
-		analogRead(Pin::joystickY) > joystickHome.y + joystickThreshold ? snakeDirection = down  : 0;
-		analogRead(Pin::joystickX) < joystickHome.x - joystickThreshold ? snakeDirection = left  : 0;
-		analogRead(Pin::joystickX) > joystickHome.x + joystickThreshold ? snakeDirection = right : 0;
+		if (digitalRead(cima) == LOW)    snakeDirection = up;
+    if (digitalRead(baixo) == LOW)   snakeDirection = down;
+    if (digitalRead(esquerdo) == LOW) snakeDirection = left;
+    if (digitalRead(direito) == LOW)  snakeDirection = right;
 
 		// ignore directional change by 180 degrees (no effect for non-moving snake)
-		snakeDirection + 2 == previousDirection && previousDirection != 0 ? snakeDirection = previousDirection : 0;
-		snakeDirection - 2 == previousDirection && previousDirection != 0 ? snakeDirection = previousDirection : 0;
+		if ((snakeDirection + 2 == previousDirection && previousDirection != 0) ||
+		    (snakeDirection - 2 == previousDirection && previousDirection != 0)) {
+			snakeDirection = previousDirection;
+		}
 
 		// intelligently blink with the food
 		matrix.setLed(0, food.row, food.col, millis() % 100 < 50 ? 1 : 0);
@@ -333,6 +343,8 @@ void calibrateJoystick() {
 
 
 void initialize() {
+  
+
 	pinMode(Pin::joystickVCC, OUTPUT);
 	digitalWrite(Pin::joystickVCC, HIGH);
 
